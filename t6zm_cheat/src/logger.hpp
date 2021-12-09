@@ -1,11 +1,7 @@
 #pragma once
 #include <cstring>
-#include <iostream>
 #include <mutex>
-
-#ifdef _WIN32
-#include "Windows.h"
-#endif
+#include <sstream>
 
 namespace t6zm
 {
@@ -15,8 +11,10 @@ namespace t6zm
 
     class Logger
     {
-        //mutable std::mutex mutex;
-        std::ofstream m_console_out;
+        std::vector<std::unique_ptr<char[]>> m_messages;
+
+        std::filesystem::path m_file_path;
+        std::ofstream m_file_out;
 
     public:
         enum class LogLevel {
@@ -27,30 +25,46 @@ namespace t6zm
             Critical
         };
 
-        Logger(LogLevel logLevel)
+        explicit Logger(LogLevel log_level) :
+            m_file_path(std::getenv("appdata")),
+            m_log_level(log_level)
         {
-#ifdef _WIN32
-            if (!AttachConsole(GetCurrentProcessId()))
+            m_file_path /= "t6zm_cheat";
+            std::filesystem::path m_backup_path = m_file_path;
+            m_backup_path /= "backup";
+
+            try
             {
-                AllocConsole();
+                if (!std::filesystem::exists(m_file_path))
+                {
+                    std::filesystem::create_directory(m_file_path);
+                }
+                else if (!std::filesystem::is_directory(m_file_path))
+                {
+                    std::filesystem::remove(m_file_path);
+                    std::filesystem::create_directory(m_file_path);
+                }
+                if (!std::filesystem::exists(m_backup_path))
+                {
+                    std::filesystem::create_directory(m_backup_path);
+                }
+                else if (!std::filesystem::is_directory(m_backup_path))
+                {
+                    std::filesystem::remove(m_backup_path);
+                    std::filesystem::create_directory(m_backup_path);
+                }
 
-                SetConsoleTitleA("Yim's Mod Menu");
-                SetConsoleOutputCP(CP_UTF8);
-                freopen("CONOUT$", "w", stdout);
+                m_file_path /= "t6zm_cheat.log";
+
+                if (std::filesystem::exists(m_file_path))
+                    std::filesystem::copy_file(m_file_path, m_backup_path / "old_t6zm_cheat.log", std::filesystem::copy_options::overwrite_existing);
+
+                m_file_out.open(m_file_path, std::ios_base::out | std::ios_base::trunc);
             }
-
-            HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (console_handle != nullptr)
+            catch (std::filesystem::filesystem_error const& error)
             {
-                DWORD console_mode;
-                GetConsoleMode(console_handle, &console_mode);
-
-                console_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
-                SetConsoleMode(console_handle, console_mode);
+                this->critical("LOGGER", "Exception:\n%s", error.what());
             }
-#endif
-
-            this->m_log_level = logLevel;
 
             g_log = this;
         }
@@ -61,35 +75,39 @@ namespace t6zm
         }
 
         LOG_ARGS
-            void critical(const char* service, const char* format, Args&& ...args)
+        void critical(const char* service, const char* format, Args&& ...args)
         {
             this->log(LogLevel::Critical, service, format, std::forward<Args>(args)...);
         }
 
         LOG_ARGS
-            void error(const char* service, const char* format, Args&& ...args)
+        void error(const char* service, const char* format, Args&& ...args)
         {
             this->log(LogLevel::Error, service, format, std::forward<Args>(args)...);
         }
 
         LOG_ARGS
-            void info(const char* service, const char* format, Args&& ...args)
+        void info(const char* service, const char* format, Args&& ...args)
         {
             this->log(LogLevel::Info, service, format, std::forward<Args>(args)...);
         }
 
         LOG_ARGS
-            void verbose(const char* service, const char* format, Args&& ...args)
+        void verbose(const char* service, const char* format, Args&& ...args)
         {
             this->log(LogLevel::Verbose, service, format, std::forward<Args>(args)...);
         }
 
         LOG_ARGS
-            void warning(const char* service, const char* format, Args&& ...args)
+        void warning(const char* service, const char* format, Args&& ...args)
         {
             this->log(LogLevel::Warning, service, format, std::forward<Args>(args)...);
         }
 
+        std::pair<std::unique_ptr<char[]>*, std::size_t> get_messages()
+        {
+            return std::make_pair(m_messages.data(), m_messages.size());
+        }
 
         void set_log_level(LogLevel level)
         {
@@ -97,46 +115,33 @@ namespace t6zm
         }
 
     private:
-        const char* blue = "\x1b[34m";
-        const char* green = "\x1b[32m";
-        const char* yellow = "\x1b[33m";
-        const char* red = "\x1b[31m";
-        const char* reset = "\x1b[0m";
-
         LogLevel m_log_level;
 
         LOG_ARGS
-            void log(LogLevel level, const char* service, const char* format, Args&& ...args)
+        void log(LogLevel level, const char* service, const char* format, Args&& ...args)
         {
             const size_t alloc_size = 8;
-
-            char color[alloc_size];
             char level_string[alloc_size];
 
             switch (level)
             {
             case LogLevel::Verbose:
-                strcpy(color, blue);
                 strcpy(level_string, "VERB");
 
                 break;
             case LogLevel::Info:
-                strcpy(color, green);
                 strcpy(level_string, "INFO");
 
                 break;
             case LogLevel::Warning:
-                strcpy(color, yellow);
                 strcpy(level_string, "WARN");
 
                 break;
             case LogLevel::Error:
-                strcpy(color, red);
                 strcpy(level_string, "ERR");
 
                 break;
             case LogLevel::Critical:
-                strcpy(color, red);
                 strcpy(level_string, "CRIT");
 
                 break;
@@ -146,11 +151,26 @@ namespace t6zm
             char* message = (char*)malloc(sizeof(char) * size_needed);
             sprintf(message, format, std::forward<Args>(args)...);
 
-            //std::lock_guard<std::mutex> lock(this->mutex);
-            std::cout << color << "[" << level_string << "/" << service << "] " << reset << message << std::endl;
+            std::stringstream sstream;
+            sstream << "[" << level_string << "/" << service << "] " << message << std::endl;
+
+            const std::string msg = sstream.str();
+            size_t size = msg.length() + 1;
+
+            m_file_out << msg << std::flush;
+
+            auto log = std::make_unique<char[]>(size);
+
+            std::uninitialized_fill_n(log.get(), size, '\0');
+            strcpy(log.get(), msg.c_str());
+
+            m_messages.push_back(
+                std::move(log)
+            );
 
             // be a good boy and free memory
             free(message);
+            message = nullptr;
         }
     };
 }
