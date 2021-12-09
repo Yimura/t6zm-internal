@@ -32,7 +32,7 @@ namespace t6zm
 		m_swapchain_present_hook.enable();
 		m_swapchain_resizebuffers_hook.enable();
 		m_og_wndproc = reinterpret_cast<WNDPROC>(SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&hooks::wndproc)));
-		m_set_cursor_pos_hook.enable();
+		//m_set_cursor_pos_hook.enable();
 
 		m_enabled = true;
 	}
@@ -41,7 +41,7 @@ namespace t6zm
 	{
 		m_enabled = false;
 
-		m_set_cursor_pos_hook.disable();
+		//m_set_cursor_pos_hook.disable();
 		SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_og_wndproc));
 		m_swapchain_resizebuffers_hook.disable();
 		m_swapchain_present_hook.disable();
@@ -95,7 +95,7 @@ namespace t6zm
 	BOOL hooks::set_cursor_pos(int x, int y)
 	{
 		if (g_gui.m_opened)
-			return true;
+			return TRUE;
 
 		return g_hooking->m_set_cursor_pos_hook.get_original<decltype(&set_cursor_pos)>()(x, y);
 	}
