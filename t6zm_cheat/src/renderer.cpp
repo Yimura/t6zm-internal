@@ -16,10 +16,8 @@ namespace t6zm
 	HWND window = NULL;
 	ID3D11Device* pDevice = NULL;
 	ID3D11DeviceContext* pContext = NULL;
-	ID3D11RenderTargetView* mainRenderTargetView;
-	uint32_t* swapchain = NULL;
 
-	renderer::renderer()// : m_dxgi_swapchain(*g_pointers->m_swapchain)
+	renderer::renderer()
 	{
 		g_renderer = this;
 	}

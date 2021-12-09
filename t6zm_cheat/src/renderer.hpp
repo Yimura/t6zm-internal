@@ -24,12 +24,6 @@ namespace t6zm
 	public:
 		ImFont* m_font;
 		ImFont* m_monospace_font;
-
-		HWND m_hwnd = NULL;
-		ID3D11Device* m_d3d_device = NULL;
-		ID3D11DeviceContext* m_d3d_device_context = NULL;
-		ID3D11RenderTargetView* m_d3d_render_target_view;
-	private:
 	};
 
 	inline renderer* g_renderer{};
