@@ -1,8 +1,11 @@
 #include "common.hpp"
+#include "features.hpp"
 #include "hooking.hpp"
 #include "logger.hpp"
 #include "pointers.hpp"
 #include "renderer.hpp"
+#include "settings.hpp"
+#include "thread_pool.hpp"
 
 DWORD WINAPI main_thread(LPVOID)
 {
@@ -16,6 +19,10 @@ DWORD WINAPI main_thread(LPVOID)
 	{
 		g_log->info("MAIN", "Menu Initializing...");
 
+		auto settings_instance = std::make_unique<settings>();
+		g_settings->load();
+		g_log->verbose("MAIN", "Settings initialized.");
+
 		auto pointers_instance = std::make_unique<pointers>();
 		g_log->verbose("MAIN", "Pointers initialized.");
 
@@ -25,14 +32,26 @@ DWORD WINAPI main_thread(LPVOID)
 		auto hooking_instance = std::make_unique<hooking>();
 		g_log->verbose("MAIN", "Hooking initialized.");
 
+		auto thread_pool_instance = std::make_unique<thread_pool>();
+		g_log->verbose("MAIN", "Thread Pool initialized.");
+
 		g_hooking->enable();
 		g_log->info("MAIN", "Hooking enabled.");
+
+		g_thread_pool->push(features::script_run);
+		g_log->verbose("MAIN", "Started threaded feature script.");
 
 		while (g_running)
 			std::this_thread::sleep_for(500ms);
 
 		g_hooking->disable();
 		g_log->info("MAIN", "Hooking disabled.");
+
+		g_thread_pool->destroy();
+		g_log->verbose("MAIN", "Destroyed thread pool.");
+
+		thread_pool_instance.reset();
+		g_log->verbose("MAIN", "Thread Pool uninitialized.");
 
 		hooking_instance.reset();
 		g_log->verbose("MAIN", "Hooking uninitialized.");
@@ -42,6 +61,10 @@ DWORD WINAPI main_thread(LPVOID)
 
 		pointers_instance.reset();
 		g_log->verbose("MAIN", "Pointers uninitialized.");
+
+		g_settings->attempt_save();
+		settings_instance.reset();
+		g_log->verbose("MAIN", "Settings saved and uninitialized.");
 	}
 	catch (const std::exception& ex)
 	{
