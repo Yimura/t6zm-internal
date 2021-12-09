@@ -12,6 +12,8 @@ namespace t6zm
 		if (!this->m_hwnd)
 			g_log->warning("POINTERS", "Failed to get window handle.");
 
+		this->m_player = (PlayerActor*)0x2346AA0;
+
 		g_pointers = this;
 	}
 
