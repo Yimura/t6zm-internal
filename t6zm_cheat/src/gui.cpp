@@ -1,5 +1,6 @@
 #include "common.hpp"
 #include "gui.hpp"
+#include "gui/window.hpp"
 #include "logger.hpp"
 
 #include <imgui.h>
@@ -91,15 +92,7 @@ namespace t6zm
 
 	void gui::dx_on_tick()
 	{
-		if (ImGui::Begin("Main Menu"))
-		{
-			ImGui::Text("It works");
-
-			if (ImGui::Button("Unload"))
-				g_running = false;
-
-			ImGui::End();
-		}
+		window::draw_all();
 	}
 
 	void gui::script_init()
