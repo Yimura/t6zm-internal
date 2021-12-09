@@ -10,6 +10,9 @@
 
 #include <thread>
 
+#include <nlohmann/json.hpp>
+#include <imgui.h>
+
 using namespace std::chrono_literals;
 
 inline HMODULE g_hmodule;
