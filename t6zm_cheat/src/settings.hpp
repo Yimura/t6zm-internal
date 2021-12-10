@@ -16,6 +16,14 @@ namespace t6zm
 			bool noclip = false;
 		};
 
+		struct weapons
+		{
+			bool unlimited_ammo = false;
+			bool unlimited_clip = false;
+			bool unlimited_lethals = false;
+			bool unlimited_tacticals = false;
+		};
+
 		struct window {
 			bool log = false;
 			bool main = true;
@@ -33,12 +41,18 @@ namespace t6zm
 		}
 
 		self self{};
+		weapons weapons{};
 		window window{};
 
 		void from_json(const nlohmann::json& j)
 		{
 			this->self.godmode = j["self"]["godmode"];
 			this->self.noclip = j["self"]["noclip"];
+
+			this->weapons.unlimited_ammo = j["weapons"]["unlimited_ammo"];
+			this->weapons.unlimited_clip = j["weapons"]["unlimited_clip"];
+			this->weapons.unlimited_clip = j["weapons"]["unlimited_lethals"];
+			this->weapons.unlimited_clip = j["weapons"]["unlimited_tacticals"];
 
 			this->window.log = j["window"]["log"];
 			this->window.main = j["window"]["main"];
@@ -51,6 +65,14 @@ namespace t6zm
 					"self", {
 						{ "godmode", this->self.godmode },
 						{ "noclip", this->self.noclip }
+					}
+				},
+				{
+					"weapons", {
+						{ "unlimited_ammo", this->weapons.unlimited_ammo },
+						{ "unlimited_clip", this->weapons.unlimited_clip },
+						{ "unlimited_lethals", this->weapons.unlimited_lethals },
+						{ "unlimited_tacticals", this->weapons.unlimited_tacticals }
 					}
 				},
 				{

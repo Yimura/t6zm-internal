@@ -11,6 +11,7 @@ namespace t6zm
 		{
 			ImGui::BeginTabBar("main_menu_tabbar");
 			tab_main::tab_self();
+			tab_main::tab_weapons();
 			ImGui::EndTabBar();
 
 			ImGui::End();
