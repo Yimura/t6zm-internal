@@ -10,8 +10,10 @@ namespace t6zm
 		nlohmann::json default_options;
 		nlohmann::json options;
 
-		struct self {
+		struct self
+		{
 			bool godmode = false;
+			bool noclip = false;
 		};
 
 		struct window {
@@ -36,6 +38,7 @@ namespace t6zm
 		void from_json(const nlohmann::json& j)
 		{
 			this->self.godmode = j["self"]["godmode"];
+			this->self.noclip = j["self"]["noclip"];
 
 			this->window.log = j["window"]["log"];
 			this->window.main = j["window"]["main"];
@@ -46,7 +49,8 @@ namespace t6zm
 			return nlohmann::json{
 				{
 					"self", {
-						{ "godmode", this->self.godmode }
+						{ "godmode", this->self.godmode },
+						{ "noclip", this->self.noclip }
 					}
 				},
 				{

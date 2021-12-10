@@ -6,13 +6,11 @@ namespace t6zm
 {
 	struct features
 	{
-		static void self_godmode();
+		static void self_noclip();
 
 		static void script_tick()
 		{
-			features::self_godmode();
-
-			std::this_thread::sleep_for(0ms);
+			features::self_noclip();
 		}
 		static void script_run()
 		{
